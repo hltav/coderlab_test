@@ -1,9 +1,26 @@
 {
   "name": "product-manager",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev:backend": "npm run start:dev --workspace=backend",
-    "dev:frontend": "npm run dev --workspace=frontend"
+    "// --- Desenvolvimento ---": "",
+    "dev:backend": "cd apps/backend && npm run start:dev",
+    "dev:frontend": "cd apps/frontend && npm run dev",
+    "dev": "concurrently -n \"BACK,FRONT\" -c \"magenta,cyan\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "// --- Testes ---": "",
+    "test": "npm run test --workspaces --if-present",
+    "test:watch": "npm run test:watch --workspaces --if-present",
+    "test:cov": "npm run test:coverage --workspace=frontend && npm run test:cov --workspace=backend",
+    "// --- Manutenção ---": "",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "db:migrate": "cd apps/backend && npx prisma migrate dev",
+    "clean": "rm -rf apps/backend/dist apps/frontend/dist"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

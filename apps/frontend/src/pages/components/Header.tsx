@@ -1,4 +1,5 @@
 import { Package, Plus, Settings } from "lucide-react";
+import { IconButton } from "../../components/ui/IconButton";
 
 interface HeaderProps {
   onNewProduct: () => void;
@@ -18,19 +19,19 @@ export function Header({ onNewProduct, onOpenConfig }: HeaderProps) {
           </h1>
         </div>
         <div className="flex gap-2">
-          <button
+          <IconButton
             onClick={onOpenConfig}
-            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200 cursor-pointer"
             title="Gerir Categorias"
           >
             <Settings size={20} />
-          </button>
-          <button
+          </IconButton>
+          <IconButton
             onClick={onNewProduct}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 shadow-sm"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 shadow-sm cursor-pointer "
           >
             <Plus size={18} /> Novo Produto
-          </button>
+          </IconButton>
         </div>
       </div>
     </header>

@@ -20,11 +20,19 @@ export function useProducts(
   const filteredProducts = useMemo(() => {
     if (!filter) return products;
     const q = filter.toLowerCase();
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.categories.some((c) => c.category.name.toLowerCase().includes(q)),
-    );
+    return products.filter((p) => {
+      const nameMatch = p.name.toLowerCase().includes(q);
+
+      const childCategoryMatch = p.categories.some((c) =>
+        c.category.name.toLowerCase().includes(q),
+      );
+
+      const parentCategoryMatch = p.categories.some((c) =>
+        c.category.parent?.name.toLowerCase().includes(q),
+      );
+
+      return nameMatch || childCategoryMatch || parentCategoryMatch;
+    });
   }, [products, filter]);
 
   const saveProduct = async (data: ProductFormData): Promise<boolean> => {
