@@ -1,0 +1,38 @@
+{
+  "cSpell.words": [
+    "categoria",
+    "chamar",
+    "checagem",
+    "correto",
+    "corretos",
+    "detectada",
+    "detectar",
+    "direto",
+    "duplicidade",
+    "Eletrônicos",
+    "filtro",
+    "fkey",
+    "Hierarquia",
+    "indireto",
+    "inexistente",
+    "menos",
+    "negativo",
+    "obrigatório",
+    "Preço",
+    "Regra"
+  ],
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "cSpell.customDictionaries": {
+    "custom-dictionary-workspace": {
+      "name": "custom-dictionary-workspace",
+      "path": "${workspaceFolder:product-manager}/.cspell/custom-dictionary-workspace.txt",
+      "addWords": true,
+      "scope": "workspace"
+    }
+  }
+}
