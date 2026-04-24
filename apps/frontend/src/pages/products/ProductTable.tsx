@@ -44,7 +44,7 @@ export function ProductTable({
                     className="hover:bg-slate-50/50 transition-colors"
                   >
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-800">
+                      <span className="text-sm font-medium text-slate-800">
                         {product.name}
                       </span>
                     </td>
@@ -82,7 +82,7 @@ export function ProductTable({
                       </p>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className="font-mono font-bold text-slate-700">
+                      <span className="text-sm font-mono font-semibold text-slate-700 whitespace-nowrap">
                         R${" "}
                         {product.price.toLocaleString("pt-BR", {
                           minimumFractionDigits: 2,

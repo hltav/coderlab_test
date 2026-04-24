@@ -23,7 +23,7 @@ export function Toolbar({ filter, onFilterChange, totalCount }: ToolbarProps) {
         />
       </div>
       <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 shadow-sm">
-        Produtos em Stock:{" "}
+        Produtos em Estoque:{" "}
         <span className="text-indigo-600 font-bold">{totalCount}</span>
       </div>
     </div>
