@@ -32,6 +32,7 @@ Arquitetura
 através
 atrito
 Atualização
+auditar
 auditável
 aumenta
 aumentado
@@ -72,6 +73,7 @@ complexas
 componentes
 composta
 comuns
+Concentrar
 configurado
 Configurar
 conhece
@@ -82,6 +84,7 @@ constrói
 construtor
 contador
 Containerização
+contém
 contenha
 Conteúdo
 controle
@@ -139,6 +142,7 @@ equilíbrio
 Escalabilidade
 escalar
 escolhido
+escopo
 escrita
 Escritório
 espaço
@@ -194,6 +198,7 @@ Filtramos
 Filtros
 flexível
 Fluxo
+focado
 fôlego
 fonte
 foram
@@ -221,6 +226,7 @@ horizontalmente
 imagens
 imediatamente
 implementa
+implementação
 IMPORTANTE
 importar
 importou
@@ -249,6 +255,7 @@ lança
 lançadas
 Laticínios
 legível
+leitura
 leve
 limpo
 linha
@@ -274,6 +281,7 @@ métodos
 migrar
 mínimo
 misturar
+misturaria
 mockadas
 Mockado
 Mockar
@@ -282,10 +290,12 @@ modais
 Modelo
 motivos
 Móveis
+mudam
 mudar
 mutáveis
 naturalmente
 navega
+navegar
 necessidade
 negócio
 Nenhum
@@ -316,17 +326,20 @@ pertence
 plana
 podemos
 polui
+ponto
 popula
 populados
 Porém
 portanto
 pouco
 precisa
+precisar
 precisaria
 Preenche
 preencher
 Preenchimento
 prefere
+preocupações
 pressionando
 primeiro
 problema
@@ -334,11 +347,13 @@ produtividade
 programaticamente
 proteger
 provavelmente
+qualidade
 quantidade
 quanto
 quebras
 quebre
 quiser
+razões
 reage
 reais
 recarga
@@ -417,6 +432,7 @@ tema
 tendo
 tenha
 terminar
+testado
 testamos
 testar
 teste
@@ -435,7 +451,9 @@ treino
 três
 Turborepo
 única
+único
 unitários
+útil
 utilitários
 utilizadas
 utilizados

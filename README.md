@@ -347,9 +347,9 @@ src/
 
 Essa decisão foi intencional por três motivos:
 
-- **Separação de responsabilidades**: código de produção e código de teste têm ciclos de vida diferentes. Manter a pasta `src/` exclusiva para código que vai para o bundle final torna o projeto mais legível e facilita configurações de build que excluem testes.
-- **Espelhamento da estrutura**: a pasta `test/` replica a hierarquia de `src/` — quem conhece um, navega no outro sem atrito. Encontrar o teste de `ProductService` é tão direto quanto encontrar o próprio service.
-- **Escalabilidade**: à medida que o projeto cresce, misturar `.spec.ts` com os arquivos de produção polui o módulo. A separação em pasta própria mantém esse custo constante independente do tamanho.
+- **Separação de responsabilidades**: cada pasta de módulo (product/, category/) contém apenas o que define seu comportamento — controller, service e DTOs. Adicionar .spec.ts ali misturaria implementação com verificação dentro do mesmo escopo, são preocupações diferentes que mudam por razões diferentes.
+- **Espelhamento da estrutura**: src/test/ replica a hierarquia de src/modules/ e cria um ponto único de referência para qualidade do código — útil para rodar cobertura, configurar o Jest e auditar o que está ou não testado sem precisar navegar por todos os módulos.
+- **Escalabilidade**: à medida que o projeto cresce, misturar .spec.ts com os arquivos de produção dentro de cada módulo polui a leitura do código. Concentrar todos os testes em src/test/ mantém cada módulo focado apenas na sua implementação.
 
 ```bash
 # Todos os testes (backend + frontend)
