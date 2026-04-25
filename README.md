@@ -330,20 +330,19 @@ Os testes não ficam junto aos arquivos de produção (padrão `produto.service.
 
 ```
 src/
-└── modules/
-    ├── product/
-    └── category/
-
-test/
-└── modules/
-    ├── products/
-    │   ├── product.controller.spec.ts
-    │   ├── product.module.spec.ts
-    │   └── product.service.spec.ts
-    └── categories/
-        ├── category.controller.spec.ts
-        ├── category.module.spec.ts
-        └── category.service.spec.ts
+├── modules/
+│   ├── product/
+│   └── category/
+└── test/
+    └── modules/
+        ├── products/
+        │   ├── product.controller.spec.ts
+        │   ├── product.module.spec.ts
+        │   └── product.service.spec.ts
+        └── categories/
+            ├── category.controller.spec.ts
+            ├── category.module.spec.ts
+            └── category.service.spec.ts
 ```
 
 Essa decisão foi intencional por três motivos:
