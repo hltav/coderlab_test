@@ -1,7 +1,10 @@
 # 📦 Product Manager
 
-Aplicação fullstack de gerenciamento de produtos desenvolvida como teste técnico.  
-Stack: **NestJS + Prisma + SQLite** no backend, **React + Vite + Tailwind** no frontend.
+Aplicação fullstack para gerenciamento de produtos e categorias, desenvolvida com foco em **qualidade de código, arquitetura escalável e boas práticas de engenharia de software**.
+
+O projeto demonstra separação clara de responsabilidades, validação robusta com Zod, testes automatizados e containerização com Docker.
+
+Stack: **NestJS + Prisma 7 + SQLite (better-sqlite3)** no backend, **React + Vite + Tailwind** no frontend.
 
 ---
 
@@ -277,6 +280,14 @@ Para um ambiente de produção com maior volume, as seguintes evoluções seriam
 
 ---
 
+### Trade-offs gerais
+
+- **SQLite em desenvolvimento**: escolhido por ser zero-configuração e facilitar o onboarding, mas não é adequado para alta concorrência em produção — a migração para PostgreSQL exige apenas trocar o adapter e o provider no schema.
+- **Sem autenticação**: ausente de forma intencional para manter o escopo alinhado ao enunciado do teste. Em produção, Guards JWT protegeriam os endpoints de escrita.
+- **Arquitetura monolítica modular**: preferida em vez de microserviços para reduzir complexidade inicial sem abrir mão da organização — cada módulo é coeso e independente o suficiente para ser extraído futuramente se necessário.
+
+---
+
 ## Uso de Inteligência Artificial
 
 ### IAs utilizadas
@@ -295,7 +306,6 @@ Para um ambiente de produção com maior volume, as seguintes evoluções seriam
 **Claude — arquitetura e testes:**
 
 > _"Dado esse schema Prisma com Product, Category e ProductCategory (N:N), como estruturo o ProductService no NestJS para validar que um produto tem ao menos uma categoria, sem expor o PrismaClient diretamente no controller?"_
-
 > _"Gere testes unitários com Jest para o ProductService. O PrismaService deve ser mockado via jest.fn(). Cubra os casos: criar produto válido, criar sem categoria (deve lançar BadRequestException), criar com preço negativo."_
 
 **ChatGPT — boilerplate inicial:**
@@ -309,6 +319,8 @@ Para um ambiente de produção com maior volume, as seguintes evoluções seriam
 ---
 
 ### O que foi adaptado / corrigido
+
+> Todas as sugestões geradas por IA foram criticamente avaliadas e adaptadas, garantindo aderência às regras de negócio, tipagem correta e boas práticas de arquitetura.
 
 - **ChatGPT**: gerou o `CreateProductDto` com `z.array(z.string())` no campo `categoryIds`. Corrigido para `z.array(z.number().int())` para alinhar com os IDs inteiros do schema Prisma, e adicionado `.min(1)` para garantir a regra de negócio.
 
@@ -382,3 +394,17 @@ cd apps/frontend && npm test
 - `MainPage` — fluxo de integração
 - `services/api.ts` — chamadas HTTP mockadas
 - `DTOs` — validação de schema
+
+---
+
+## Teste manual rápido
+
+1. Acesse http://localhost:5173
+2. Crie uma categoria
+3. Crie um produto associado a essa categoria
+4. Teste o filtro por nome
+5. Edite e exclua o produto
+
+> Todas as regras de negócio são validadas automaticamente — preço negativo, produto sem categoria e loop de hierarquia retornam erros descritivos.
+
+---
