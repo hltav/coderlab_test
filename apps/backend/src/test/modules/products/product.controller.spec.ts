@@ -6,7 +6,13 @@ const mockProduct = {
   id: 1,
   name: 'iPhone 15',
   price: 5999.99,
+  stock: 0,
   categories: [],
+};
+
+const mockPaginatedResult = {
+  data: [mockProduct],
+  meta: { total: 1, page: 1, lastPage: 1 },
 };
 
 const mockService = {
@@ -30,17 +36,53 @@ describe('ProductController', () => {
     jest.clearAllMocks();
   });
 
-  it('findAll deve chamar service.findAll sem filtro', async () => {
-    mockService.findAll.mockResolvedValue([mockProduct]);
+  it('findAll deve chamar service.findAll com defaults quando sem query', async () => {
+    mockService.findAll.mockResolvedValue(mockPaginatedResult);
     const result = await controller.findAll();
-    expect(result).toEqual([mockProduct]);
-    expect(mockService.findAll).toHaveBeenCalledWith(undefined);
+    expect(result).toEqual(mockPaginatedResult);
+    expect(mockService.findAll).toHaveBeenCalledWith({
+      name: undefined,
+      description: undefined,
+      categoryIds: undefined,
+      page: 1,
+      limit: 10,
+    });
   });
 
-  it('findAll deve chamar service.findAll com filtro de nome', async () => {
-    mockService.findAll.mockResolvedValue([mockProduct]);
-    await controller.findAll('iPhone');
-    expect(mockService.findAll).toHaveBeenCalledWith('iPhone');
+  it('findAll deve passar name e description ao service', async () => {
+    mockService.findAll.mockResolvedValue(mockPaginatedResult);
+    await controller.findAll('iPhone', 'Pro Max');
+    expect(mockService.findAll).toHaveBeenCalledWith({
+      name: 'iPhone',
+      description: 'Pro Max',
+      categoryIds: undefined,
+      page: 1,
+      limit: 10,
+    });
+  });
+
+  it('findAll deve parsear categoryIds separados por vírgula', async () => {
+    mockService.findAll.mockResolvedValue(mockPaginatedResult);
+    await controller.findAll(undefined, undefined, '1,2,3');
+    expect(mockService.findAll).toHaveBeenCalledWith({
+      name: undefined,
+      description: undefined,
+      categoryIds: [1, 2, 3],
+      page: 1,
+      limit: 10,
+    });
+  });
+
+  it('findAll deve respeitar page e limit customizados', async () => {
+    mockService.findAll.mockResolvedValue(mockPaginatedResult);
+    await controller.findAll(undefined, undefined, undefined, '2', '5');
+    expect(mockService.findAll).toHaveBeenCalledWith({
+      name: undefined,
+      description: undefined,
+      categoryIds: undefined,
+      page: 2,
+      limit: 5,
+    });
   });
 
   it('findOne deve chamar service.findOne com id correto', async () => {

@@ -3,19 +3,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCategories } from "../../hooks/useCategories";
 import { Category } from "../../types";
 
-// ── Mocks ────────────────────────────────────────────────────────────────────
-
 const mockGetCategories = vi.fn();
 const mockCreateCategory = vi.fn();
+const mockDeleteCategory = vi.fn(); // ← faltava
 
 vi.mock("../../services/api", () => ({
   api: {
     getCategories: (...args: any[]) => mockGetCategories(...args),
     createCategory: (...args: any[]) => mockCreateCategory(...args),
+    deleteCategory: (...args: any[]) => mockDeleteCategory(...args), // ← faltava
   },
 }));
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 const makeCategory = (overrides: Partial<Category>): Category => ({
   id: 1,
@@ -38,13 +36,12 @@ function setup() {
   return { ...hook, showNotification };
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
-
 describe("useCategories", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetCategories.mockResolvedValue(seedCategories);
     mockCreateCategory.mockResolvedValue({});
+    mockDeleteCategory.mockResolvedValue({});
   });
 
   describe("carregamento inicial", () => {
@@ -60,32 +57,27 @@ describe("useCategories", () => {
 
     it("popula flatCategories com todas as categorias retornadas pela API", async () => {
       const { result } = setup();
-
-      // Esperamos o loading terminar ANTES de checar os dados
       await waitFor(() => expect(result.current.loading).toBe(false));
-
       expect(result.current.flatCategories).toEqual(seedCategories);
     });
 
-    it("constrói categoryTree apenas com pais no topo e filhos agrupados", async () => {
+    it("constrói categoryTree com id do pai como chave e filhos agrupados", async () => {
       const { result } = setup();
       await waitFor(() => expect(result.current.loading).toBe(false));
 
+      // chave é o id do pai (number), não o nome
       expect(result.current.categoryTree).toEqual({
-        Eletronicos: [
+        1: [
           makeCategory({ id: 2, name: "Celulares", parentId: 1 }),
           makeCategory({ id: 3, name: "Notebooks", parentId: 1 }),
         ],
-        Roupas: [makeCategory({ id: 5, name: "Camisetas", parentId: 4 })],
+        4: [makeCategory({ id: 5, name: "Camisetas", parentId: 4 })],
       });
     });
 
     it("notifica erro quando getCategories rejeita", async () => {
-      // Sobrescreve apenas para este teste
       mockGetCategories.mockRejectedValueOnce(new Error("fail"));
-
       const { result, showNotification } = setup();
-
       await waitFor(() => expect(result.current.loading).toBe(false));
       expect(showNotification).toHaveBeenCalledWith(
         "Erro ao carregar categorias",
@@ -105,8 +97,18 @@ describe("useCategories", () => {
 
       expect(mockCreateCategory).toHaveBeenCalledWith({ name: "Games" });
       expect(showNotification).toHaveBeenCalledWith("Categoria adicionada!");
-      // 1 (mount) + 1 (após add)
       expect(mockGetCategories).toHaveBeenCalledTimes(2);
+    });
+
+    it("não chama api.createCategory se nome estiver vazio", async () => {
+      const { result } = setup();
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.addCategory("   ");
+      });
+
+      expect(mockCreateCategory).not.toHaveBeenCalled();
     });
   });
 
@@ -124,22 +126,72 @@ describe("useCategories", () => {
         parentId: 1,
       });
     });
-  });
 
-  describe("deleteCategory", () => {
-    it("remove a chave do categoryTree localmente", async () => {
+    it("não chama api.createCategory se pai não for encontrado", async () => {
       const { result } = setup();
       await waitFor(() => expect(result.current.loading).toBe(false));
 
-      // Garante que a árvore existe antes de deletar
-      expect(result.current.categoryTree).toHaveProperty("Eletronicos");
-
-      act(() => {
-        result.current.deleteCategory("Eletronicos");
+      await act(async () => {
+        await result.current.addSubcategory("Inexistente", "Sub");
       });
 
-      expect(result.current.categoryTree).not.toHaveProperty("Eletronicos");
-      expect(result.current.categoryTree).toHaveProperty("Roupas");
+      expect(mockCreateCategory).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("deleteCategory", () => {
+    it("chama api.deleteCategory com o id correto e recarrega", async () => {
+      const { result, showNotification } = setup();
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.deleteCategory(1);
+      });
+
+      expect(mockDeleteCategory).toHaveBeenCalledWith(1);
+      expect(showNotification).toHaveBeenCalledWith(
+        "Categoria removida!",
+        "info",
+      );
+      expect(mockGetCategories).toHaveBeenCalledTimes(2);
+    });
+
+    it("notifica erro com mensagem do backend quando api.deleteCategory rejeita", async () => {
+      const { result, showNotification } = setup();
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const err: any = new Error("bloqueado");
+      err.response = {
+        data: {
+          message: "Não é possível remover categoria com produtos vinculados",
+        },
+      };
+      mockDeleteCategory.mockRejectedValueOnce(err);
+
+      await act(async () => {
+        await result.current.deleteCategory(1);
+      });
+
+      expect(showNotification).toHaveBeenCalledWith(
+        "Não é possível remover categoria com produtos vinculados",
+        "error",
+      );
+    });
+
+    it("notifica mensagem genérica quando erro não tem response", async () => {
+      const { result, showNotification } = setup();
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      mockDeleteCategory.mockRejectedValueOnce(new Error("network error"));
+
+      await act(async () => {
+        await result.current.deleteCategory(1);
+      });
+
+      expect(showNotification).toHaveBeenCalledWith(
+        "Erro ao remover categoria",
+        "error",
+      );
     });
   });
 });

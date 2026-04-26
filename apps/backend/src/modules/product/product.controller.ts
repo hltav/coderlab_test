@@ -18,8 +18,20 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
-  findAll(@Query('name') name?: string) {
-    return this.productService.findAll(name);
+  findAll(
+    @Query('name') name?: string,
+    @Query('description') description?: string,
+    @Query('categoryIds') categoryIds?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ) {
+    return this.productService.findAll({
+      name,
+      description,
+      categoryIds: categoryIds ? categoryIds.split(',').map(Number) : undefined,
+      page: Number(page),
+      limit: Number(limit),
+    });
   }
 
   @Get(':id')

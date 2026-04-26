@@ -27,6 +27,7 @@ export const ProductSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   price: z.number(),
+  stock: z.number().int().min(0).optional().default(0),
   createdAt: z.string(),
   updatedAt: z.string(),
   categories: z.array(ProductCategorySchema),

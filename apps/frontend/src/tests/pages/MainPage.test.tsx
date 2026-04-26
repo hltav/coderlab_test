@@ -3,10 +3,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "../../pages/MainPage";
 
-// ── Mocks Estáveis ───────────────────────────────────────────────────────────
+// ── Mocks ───────────────────────────────────────────────────────────
 
 const mockUseProducts = {
-  filteredProducts: [
+  products: [
     {
       id: 1,
       name: "Produto Mockado",
@@ -17,15 +17,26 @@ const mockUseProducts = {
       updatedAt: new Date().toISOString(),
     },
   ],
-  filter: "",
-  setFilter: vi.fn(),
+  filters: {
+    name: "",
+    description: "",
+    categoryIds: [],
+    page: 1,
+    limit: 10,
+  },
+  setFilters: vi.fn(),
+  meta: {
+    total: 1,
+    lastPage: 1,
+  },
   saveProduct: vi.fn(),
   deleteProduct: vi.fn(),
   loading: false,
 };
 
 const mockUseCategories = {
-  categoryTree: { Eletronicos: [] },
+  categoryTree: { 1: [] },
+  flatCategories: [],
   addCategory: vi.fn(),
   addSubcategory: vi.fn(),
   deleteCategory: vi.fn(),
@@ -39,46 +50,47 @@ vi.mock("../../hooks/useCategories", () => ({
   useCategories: () => mockUseCategories,
 }));
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// ── Tests ───────────────────────────────────────────────────────────
 
 describe("Página Principal (Page)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("deve renderizar os componentes base (Header, Toolbar e Table)", () => {
+  it("deve renderizar os componentes base", () => {
     render(<Page />);
 
-    // 1. Testa o Header usando uma função matcher para lidar com o <span>
-    expect(
-      screen.getByText((content, element) => {
-        return (
-          element?.tagName.toLowerCase() === "h1" &&
-          content.includes("Mercatto")
-        );
-      }),
-    ).toBeInTheDocument();
+    // Header
+    expect(screen.getByText(/Mercatto/i)).toBeInTheDocument();
 
-    // 2. Testa a Toolbar procurando pelo placeholder exato
-    expect(
-      screen.getByPlaceholderText(/Pesquisar por nome ou categoria/i),
-    ).toBeInTheDocument();
-
-    // 3. Testa o contador da Toolbar
-    expect(screen.getByText(/Produtos em Estoque:/i)).toBeInTheDocument();
-
-    // 4. Testa a Table verificando se o produto do mock está lá
+    // Produto mockado na tabela
     expect(screen.getByText("Produto Mockado")).toBeInTheDocument();
+
+    // filtro REAL do código (corrigido conforme DOM)
+    expect(screen.getByPlaceholderText(/Buscar por nome/i)).toBeInTheDocument();
+
+    expect(
+      screen.getByPlaceholderText(/Buscar por descrição/i),
+    ).toBeInTheDocument();
+
+    // botão de novo produto
+    expect(
+      screen.getByRole("button", { name: /Novo Produto/i }),
+    ).toBeInTheDocument();
+
+    // contador
+    expect(
+      screen.getByText(/1 produto\(s\) encontrado\(s\)/i),
+    ).toBeInTheDocument();
   });
 
   it("deve abrir o ProductModal através do Header", () => {
     render(<Page />);
 
-    const btnNew = screen.getByRole("button", { name: /Novo Produto/i });
-    fireEvent.click(btnNew);
+    fireEvent.click(screen.getByRole("button", { name: /Novo Produto/i }));
 
     expect(
-      screen.getByRole("heading", { level: 2, name: /Novo Produto/i }),
+      screen.getByRole("heading", { name: /Novo Produto/i }),
     ).toBeInTheDocument();
   });
 
@@ -87,8 +99,7 @@ describe("Página Principal (Page)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Novo Produto/i }));
 
-    const closeBtn = screen.getByLabelText("close");
-    fireEvent.click(closeBtn);
+    fireEvent.click(screen.getByLabelText("close"));
 
     expect(
       screen.queryByRole("heading", { name: /Novo Produto/i }),
@@ -98,9 +109,7 @@ describe("Página Principal (Page)", () => {
   it("deve abrir o CategoryModal através do botão de configuração", () => {
     render(<Page />);
 
-    // O Header usa title="Gerir Categorias" no botão de Settings
-    const btnConfig = screen.getByTitle(/Gerir Categorias/i);
-    fireEvent.click(btnConfig);
+    fireEvent.click(screen.getByTitle(/Gerir Categorias/i));
 
     expect(screen.getByText(/Configurar Categorias/i)).toBeInTheDocument();
   });

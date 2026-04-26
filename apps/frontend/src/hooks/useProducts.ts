@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../services/api";
 import type { NotificationState, Product, ProductFormData } from "../types";
 
@@ -6,48 +6,57 @@ export function useProducts(
   showNotification: (msg: string, type?: NotificationState["type"]) => void,
 ) {
   const [products, setProducts] = useState<Product[]>([]);
-  const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const [filters, setFilters] = useState({
+    name: "",
+    description: "",
+    categoryIds: [] as number[],
+    page: 1,
+    limit: 10,
+  });
+
+  const [meta, setMeta] = useState({
+    total: 0,
+    lastPage: 1,
+  });
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+
+      const res = await api.getProducts(filters);
+
+      setProducts(res.data);
+      setMeta(res.meta);
+    } catch {
+      showNotification("Erro ao carregar produtos", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    api
-      .getProducts()
-      .then(setProducts)
-      .catch(() => showNotification("Erro ao carregar produtos", "error"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filteredProducts = useMemo(() => {
-    if (!filter) return products;
-    const q = filter.toLowerCase();
-    return products.filter((p) => {
-      const nameMatch = p.name.toLowerCase().includes(q);
-
-      const childCategoryMatch = p.categories.some((c) =>
-        c.category.name.toLowerCase().includes(q),
-      );
-
-      const parentCategoryMatch = p.categories.some((c) =>
-        c.category.parent?.name.toLowerCase().includes(q),
-      );
-
-      return nameMatch || childCategoryMatch || parentCategoryMatch;
-    });
-  }, [products, filter]);
+    fetchProducts();
+  }, [filters]);
 
   const saveProduct = async (data: ProductFormData): Promise<boolean> => {
     if (data.price <= 0) {
       showNotification("O preço deve ser superior a zero", "error");
       return false;
     }
+
     try {
       const saved = await api.saveProduct(data);
+
       setProducts((prev) =>
         data.id
           ? prev.map((p) => (p.id === data.id ? saved : p))
           : [...prev, saved],
       );
+
       showNotification(data.id ? "Produto atualizado!" : "Produto criado!");
+
       return true;
     } catch {
       showNotification("Erro ao salvar produto", "error");
@@ -67,11 +76,12 @@ export function useProducts(
 
   return {
     products,
-    filteredProducts,
-    filter,
-    setFilter,
+    loading,
+    filters,
+    setFilters,
+    meta,
     saveProduct,
     deleteProduct,
-    loading,
+    refetch: fetchProducts,
   };
 }

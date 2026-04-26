@@ -18,7 +18,7 @@ export function useCategories(
         const parents = all.filter((c) => c.parentId === null);
         const tree: CategoryTree = {};
         for (const p of parents) {
-          tree[p.name] = all.filter((c) => c.parentId === p.id);
+          tree[p.id] = all.filter((c) => c.parentId === p.id);
         }
         setCategoryTree(tree);
       })
@@ -58,13 +58,16 @@ export function useCategories(
     }
   };
 
-  // Delete ainda não tem endpoint — remove apenas do estado local
-  const deleteCategory = (cat: string) => {
-    setCategoryTree((prev) => {
-      const next = { ...prev };
-      delete next[cat];
-      return next;
-    });
+  const deleteCategory = async (id: number) => {
+    try {
+      await api.deleteCategory(id);
+      await load();
+      showNotification("Categoria removida!", "info");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ?? "Erro ao remover categoria";
+      showNotification(message, "error");
+    }
   };
 
   return {

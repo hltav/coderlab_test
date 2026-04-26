@@ -17,16 +17,41 @@ async function http<T>(path: string, options?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const error: any = new Error(body?.message ?? `HTTP ${res.status}`);
+    error.response = { data: body };
+    throw error;
+  }
+
   if (res.status === 204) return undefined as T;
   return res.json();
 }
 
 export const api = {
   // ── Products ───────────────────────────────────────────────────────────────
-  getProducts: (name?: string): Promise<Product[]> => {
-    const query = name ? `?name=${encodeURIComponent(name)}` : "";
-    return http<Product[]>(`/products${query}`);
+  getProducts: (params?: {
+    name?: string;
+    description?: string;
+    categoryIds?: number[];
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+
+    if (params?.name) query.append("name", params.name);
+    if (params?.description) query.append("description", params.description);
+    if (params?.categoryIds?.length) {
+      query.append("categoryIds", params.categoryIds.join(","));
+    }
+    if (params?.page) query.append("page", String(params.page));
+    if (params?.limit) query.append("limit", String(params.limit));
+
+    return http<{
+      data: Product[];
+      meta: { total: number; page: number; lastPage: number };
+    }>(`/products?${query.toString()}`);
   },
 
   getProduct: (id: number): Promise<Product> =>
@@ -58,7 +83,7 @@ export const api = {
   // ── Categories ─────────────────────────────────────────────────────────────
   // O backend retorna lista plana com duplicatas (pai + filho).
   // Filtramos só os pais (parentId === null) e usamos children já populados.
-  getCategories: (): Promise<Category[]> => http<Category[]>("/category"),
+  getCategories: (): Promise<Category[]> => http<Category[]>("/categories"),
 
   getCategoryTree: async (): Promise<CategoryTree> => {
     const all = await api.getCategories();
@@ -70,14 +95,17 @@ export const api = {
     const tree: CategoryTree = {};
 
     for (const parent of parents) {
-      tree[parent.name] = parent.children ?? [];
+      tree[parent.id] = parent.children ?? [];
     }
 
     return tree;
   },
   createCategory: (data: CreateCategoryInput): Promise<Category> =>
-    http<Category>("/category", {
+    http<Category>("/categories", {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  deleteCategory: (id: number): Promise<void> =>
+    http<void>(`/categories/${id}`, { method: "DELETE" }),
 };

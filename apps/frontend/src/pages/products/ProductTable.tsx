@@ -19,25 +19,31 @@ export function ProductTable({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              {["Produto", "Categorias", "Descrição", "Preço", "Ações"].map(
-                (col, i) => (
-                  <th
-                    key={col}
-                    className={`px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 ${
-                      i === 3 ? "text-right" : i === 4 ? "text-center" : ""
-                    }`}
-                  >
-                    {col}
-                  </th>
-                ),
-              )}
+              {[
+                "Produto",
+                "Categorias",
+                "Descrição",
+                "Preço",
+                "Estoque",
+                "Ações",
+              ].map((col, i) => (
+                <th
+                  key={col}
+                  className={`px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 ${
+                    i === 3 ? "text-right" : i === 4 ? "text-center" : ""
+                  }`}
+                >
+                  {col}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {products.length > 0 ? (
               products.map((product) => {
                 // Extrai os objetos Category da tabela pivot
-                const cats = product.categories.map((pc) => pc.category);
+                const cats = product.categories?.map((pc) => pc.category) ?? [];
+
                 return (
                   <tr
                     key={product.id}
@@ -89,6 +95,9 @@ export function ProductTable({
                         })}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      <StockBadge stock={product.stock} />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <IconButton
@@ -123,5 +132,25 @@ export function ProductTable({
         </table>
       </div>
     </div>
+  );
+}
+
+function StockBadge({ stock }: { stock: number }) {
+  if (stock === 0)
+    return (
+      <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-red-100 text-red-600">
+        Zerado
+      </span>
+    );
+  if (stock < 10)
+    return (
+      <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-yellow-100 text-yellow-700">
+        {stock} un.
+      </span>
+    );
+  return (
+    <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-green-100 text-green-700">
+      {stock} un.
+    </span>
   );
 }

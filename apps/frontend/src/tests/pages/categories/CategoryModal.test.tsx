@@ -4,14 +4,29 @@ import { describe, expect, it, vi } from "vitest";
 import { CategoryModal } from "../../../pages/categories/CategoryModal";
 import { CategoryTree } from "../../../types";
 
-// ── Mocks de Dados ───────────────────────────────────────────────────────────
-
 const mockCategoryTree: CategoryTree = {
-  Eletronicos: [
-    { id: 2, name: "Celulares", parentId: 1 },
-    { id: 3, name: "Notebooks", parentId: 1 },
+  1: [
+    {
+      id: 2,
+      name: "Celulares",
+      parentId: 1,
+      parent: { id: 1, name: "Eletronicos", parentId: null },
+    },
+    {
+      id: 3,
+      name: "Notebooks",
+      parentId: 1,
+      parent: { id: 1, name: "Eletronicos", parentId: null },
+    },
   ],
-  Roupas: [],
+  4: [
+    {
+      id: 5,
+      name: "Camisetas",
+      parentId: 4,
+      parent: { id: 4, name: "Roupas", parentId: null },
+    },
+  ],
 };
 
 const defaultProps = {
@@ -23,8 +38,6 @@ const defaultProps = {
   onClose: vi.fn(),
 };
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
-
 describe("CategoryModal", () => {
   it("não deve renderizar nada quando isOpen for false", () => {
     render(<CategoryModal {...defaultProps} isOpen={false} />);
@@ -33,14 +46,17 @@ describe("CategoryModal", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("deve renderizar as categorias e subcategorias corretamente", () => {
+  it("deve renderizar os nomes dos pais vindos de parent.name", () => {
     render(<CategoryModal {...defaultProps} />);
-
     expect(screen.getByText(/eletronicos/i)).toBeInTheDocument();
     expect(screen.getByText(/roupas/i)).toBeInTheDocument();
+  });
 
+  it("deve renderizar as subcategorias corretamente", () => {
+    render(<CategoryModal {...defaultProps} />);
     expect(screen.getByText(/celulares/i)).toBeInTheDocument();
     expect(screen.getByText(/notebooks/i)).toBeInTheDocument();
+    expect(screen.getByText(/camisetas/i)).toBeInTheDocument();
   });
 
   it("deve chamar onAddCategory com o valor correto ao clicar no botão", () => {
@@ -54,49 +70,46 @@ describe("CategoryModal", () => {
     fireEvent.click(button);
 
     expect(onAddCategory).toHaveBeenCalledWith("Livros");
-    // Verifica se o input foi limpo
     expect(input).toHaveValue("");
   });
 
-  it("deve chamar onAddSubcategory ao clicar no botão de subcategoria", () => {
+  it("deve chamar onAddSubcategory com a chave numérica string e o nome", () => {
     const onAddSubcategory = vi.fn();
     render(
       <CategoryModal {...defaultProps} onAddSubcategory={onAddSubcategory} />,
     );
 
-    // Pegamos o input de subcategoria dentro da seção "Eletronicos"
     const subInputs = screen.getAllByPlaceholderText(/Nova subcategoria.../i);
     const subButtons = screen.getAllByText(/\+ Add Sub/i);
 
-    // Vamos usar o primeiro (índice 0) que corresponde a Eletronicos
+    // índice 0 = grupo 1 (Eletronicos)
     fireEvent.change(subInputs[0], { target: { value: "Tablets" } });
     fireEvent.click(subButtons[0]);
 
-    expect(onAddSubcategory).toHaveBeenCalledWith("Eletronicos", "Tablets");
+    // o componente passa catIdStr ("1") como primeiro argumento
+    expect(onAddSubcategory).toHaveBeenCalledWith("1", "Tablets");
     expect(subInputs[0]).toHaveValue("");
   });
 
-  it("deve chamar onDeleteCategory ao clicar no ícone de lixeira", () => {
+  it("deve chamar onDeleteCategory com o id numérico correto", () => {
     const onDeleteCategory = vi.fn();
     render(
       <CategoryModal {...defaultProps} onDeleteCategory={onDeleteCategory} />,
     );
 
-    // Existem dois botões de delete (um para Eletronicos, outro para Roupas)
     const deleteButtons = screen.getAllByLabelText(/Delete/i);
 
-    fireEvent.click(deleteButtons[1]); // Clicando no delete de "Roupas"
+    // índice 0 = grupo 1 (Eletronicos), índice 1 = grupo 4 (Roupas)
+    fireEvent.click(deleteButtons[1]);
 
-    expect(onDeleteCategory).toHaveBeenCalledWith("Roupas");
+    expect(onDeleteCategory).toHaveBeenCalledWith(4);
   });
 
   it("deve chamar onClose ao clicar no botão de fechar", () => {
     const onClose = vi.fn();
     render(<CategoryModal {...defaultProps} onClose={onClose} />);
 
-    const closeButton = screen.getByLabelText("close");
-    fireEvent.click(closeButton);
-
+    fireEvent.click(screen.getByLabelText("close"));
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -109,5 +122,17 @@ describe("CategoryModal", () => {
     fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
     expect(onAddCategory).toHaveBeenCalledWith("Ferramentas");
+  });
+
+  it("não deve chamar onAddSubcategory se o input estiver vazio", () => {
+    const onAddSubcategory = vi.fn();
+    render(
+      <CategoryModal {...defaultProps} onAddSubcategory={onAddSubcategory} />,
+    );
+
+    const subButtons = screen.getAllByText(/\+ Add Sub/i);
+    fireEvent.click(subButtons[0]); // clica sem digitar nada
+
+    expect(onAddSubcategory).not.toHaveBeenCalled();
   });
 });

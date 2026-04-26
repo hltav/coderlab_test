@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -67,5 +68,35 @@ export class CategoryService {
         });
       current = parent?.parentId ?? null;
     }
+  }
+
+  async remove(id: number) {
+    const category = await this.prisma.category.findUnique({
+      where: { id },
+      include: {
+        products: { take: 1 },
+        children: { take: 1 },
+      },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Categoria #${id} não encontrada`);
+    }
+
+    if (category.products.length > 0) {
+      throw new BadRequestException(
+        'Não é possível remover categoria com produtos vinculados',
+      );
+    }
+
+    if (category.children.length > 0) {
+      throw new BadRequestException(
+        'Não é possível remover categoria que possui subcategorias',
+      );
+    }
+
+    return this.prisma.category.delete({
+      where: { id },
+    });
   }
 }

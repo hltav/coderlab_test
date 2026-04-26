@@ -7,7 +7,7 @@ interface CategoryModalProps {
   categoryTree: CategoryTree;
   onAddCategory: (name: string) => void;
   onAddSubcategory: (mainCat: string, subName: string) => void;
-  onDeleteCategory: (cat: string) => void;
+  onDeleteCategory: (cat: number) => void;
   onClose: () => void;
 }
 
@@ -30,8 +30,11 @@ export function CategoryModal({
   };
 
   const handleAddSub = (cat: string) => {
-    onAddSubcategory(cat, subInputs[cat] ?? "");
-    setSubInputs((prev) => ({ ...prev, [cat]: "" }));
+    const subName = subInputs[cat] ?? "";
+    if (subName.trim()) {
+      onAddSubcategory(cat, subName);
+      setSubInputs((prev) => ({ ...prev, [cat]: "" }));
+    }
   };
 
   return (
@@ -44,7 +47,7 @@ export function CategoryModal({
           <button
             aria-label="close"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600"
+            className="text-slate-400 hover:text-slate-600 cursor-pointer"
           >
             <X size={24} />
           </button>
@@ -65,7 +68,7 @@ export function CategoryModal({
               />
               <button
                 onClick={handleAddCategory}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors cursor-pointer"
               >
                 Adicionar
               </button>
@@ -73,52 +76,65 @@ export function CategoryModal({
           </div>
 
           <div className="space-y-4">
-            {Object.entries(categoryTree).map(([cat, subs]) => (
-              <div key={cat} className="border border-slate-200 rounded-xl p-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-bold text-slate-800 uppercase tracking-wide text-sm">
-                    {cat}
-                  </h3>
-                  <button
-                    aria-label="Delete"
-                    onClick={() => onDeleteCategory(cat)}
-                    className="text-red-400 hover:text-red-600"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {subs.map((sub) => (
-                    <span
-                      key={sub.id}
-                      className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium"
+            {Object.entries(categoryTree).map(([catIdStr, subs]) => {
+              const catId = Number(catIdStr); // converte a chave para número
+
+              return (
+                <div
+                  key={catId}
+                  className="border border-slate-200 rounded-xl p-4"
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-slate-800 uppercase tracking-wide text-sm">
+                      {subs.length > 0
+                        ? (subs[0].parent?.name ?? subs[0].name)
+                        : "Categoria"}
+                    </h3>
+                    <button
+                      aria-label="Delete"
+                      onClick={() => onDeleteCategory(Number(catId))}
+                      className="text-red-400 hover:text-red-600 cursor-pointer"
                     >
-                      {sub.name} {/* ✅ string, não o objeto */}
-                    </span>
-                  ))}
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {subs.map((sub) => (
+                      <span
+                        key={sub.id}
+                        className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium"
+                      >
+                        {sub.name}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      value={subInputs[catIdStr] ?? ""}
+                      placeholder="Nova subcategoria..."
+                      onChange={(e) =>
+                        setSubInputs((prev) => ({
+                          ...prev,
+                          [catIdStr]: e.target.value,
+                        }))
+                      }
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleAddSub(catIdStr)
+                      }
+                      className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <button
+                      onClick={() => handleAddSub(catIdStr)}
+                      className="text-indigo-600 text-sm font-bold hover:text-indigo-800 cursor-pointer"
+                    >
+                      + Add Sub
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    value={subInputs[cat] ?? ""}
-                    placeholder="Nova subcategoria..."
-                    onChange={(e) =>
-                      setSubInputs((prev) => ({
-                        ...prev,
-                        [cat]: e.target.value,
-                      }))
-                    }
-                    onKeyDown={(e) => e.key === "Enter" && handleAddSub(cat)}
-                    className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <button
-                    onClick={() => handleAddSub(cat)}
-                    className="text-indigo-600 text-sm font-bold hover:text-indigo-800"
-                  >
-                    + Add Sub
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

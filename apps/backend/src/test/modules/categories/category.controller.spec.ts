@@ -13,6 +13,7 @@ const mockCategory = {
 const mockService = {
   findAll: jest.fn(),
   create: jest.fn(),
+  remove: jest.fn(), // ← faltava
 };
 
 describe('CategoryController', () => {
@@ -41,5 +42,19 @@ describe('CategoryController', () => {
     const result = await controller.create(dto);
     expect(result).toEqual(mockCategory);
     expect(mockService.create).toHaveBeenCalledWith(dto);
+  });
+
+  it('remove deve chamar service.remove com id correto', async () => {
+    mockService.remove.mockResolvedValue(mockCategory);
+    const result = await controller.remove(1);
+    expect(result).toEqual(mockCategory);
+    expect(mockService.remove).toHaveBeenCalledWith(1);
+  });
+
+  it('remove deve propagar erro se service.remove lançar exceção', async () => {
+    mockService.remove.mockRejectedValue(new Error('Categoria com produtos'));
+    await expect(controller.remove(1)).rejects.toThrow(
+      'Categoria com produtos',
+    );
   });
 });

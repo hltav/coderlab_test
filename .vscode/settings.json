@@ -34,5 +34,8 @@
       "addWords": true,
       "scope": "workspace"
     }
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
   }
 }

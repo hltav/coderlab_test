@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CategoryService } from '../../../modules/category/category.service';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -9,6 +13,7 @@ const mockCategory = {
   parentId: null,
   parent: null,
   children: [],
+  products: [],
 };
 
 const mockPrisma = {
@@ -16,6 +21,7 @@ const mockPrisma = {
     findMany: jest.fn(),
     findUnique: jest.fn(),
     create: jest.fn(),
+    delete: jest.fn(), // ← faltava
   },
 };
 
@@ -44,7 +50,7 @@ describe('CategoryService', () => {
 
   describe('create', () => {
     it('deve criar categoria sem pai', async () => {
-      mockPrisma.category.findUnique.mockResolvedValue(null); // name não existe
+      mockPrisma.category.findUnique.mockResolvedValue(null);
       mockPrisma.category.create.mockResolvedValue(mockCategory);
       const result = await service.create({ name: 'Eletrônicos' });
       expect(result).toEqual(mockCategory);
@@ -72,7 +78,7 @@ describe('CategoryService', () => {
     });
 
     it('deve lançar ConflictException se nome já existir', async () => {
-      mockPrisma.category.findUnique.mockResolvedValue(mockCategory); // name já existe
+      mockPrisma.category.findUnique.mockResolvedValue(mockCategory);
       await expect(service.create({ name: 'Eletrônicos' })).rejects.toThrow(
         ConflictException,
       );
@@ -98,6 +104,48 @@ describe('CategoryService', () => {
       await expect(service.checkHierarchyLoop(2, 3)).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('remove', () => {
+    it('deve remover categoria sem produtos e sem filhos', async () => {
+      mockPrisma.category.findUnique.mockResolvedValue({
+        ...mockCategory,
+        products: [],
+        children: [],
+      });
+      mockPrisma.category.delete.mockResolvedValue(mockCategory);
+
+      const result = await service.remove(1);
+      expect(result).toEqual(mockCategory);
+      expect(mockPrisma.category.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+    });
+
+    it('deve lançar NotFoundException se categoria não existir', async () => {
+      mockPrisma.category.findUnique.mockResolvedValue(null);
+      await expect(service.remove(99)).rejects.toThrow(NotFoundException);
+    });
+
+    it('deve lançar BadRequestException se categoria tiver produtos vinculados', async () => {
+      mockPrisma.category.findUnique.mockResolvedValue({
+        ...mockCategory,
+        products: [{ productId: 1, categoryId: 1 }],
+        children: [],
+      });
+      await expect(service.remove(1)).rejects.toThrow(BadRequestException);
+      expect(mockPrisma.category.delete).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar BadRequestException se categoria tiver subcategorias', async () => {
+      mockPrisma.category.findUnique.mockResolvedValue({
+        ...mockCategory,
+        products: [],
+        children: [{ id: 2, name: 'Smartphones', parentId: 1 }],
+      });
+      await expect(service.remove(1)).rejects.toThrow(BadRequestException);
+      expect(mockPrisma.category.delete).not.toHaveBeenCalled();
     });
   });
 });

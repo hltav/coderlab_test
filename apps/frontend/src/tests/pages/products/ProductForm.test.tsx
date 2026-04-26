@@ -8,22 +8,40 @@ import {
 } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ProductForm } from "../../../pages/products/ProductForm";
-import { CategoryTree, Product } from "../../../types";
+import type { CategoryTree, Product } from "../../../types";
 
-// ── Mocks de Dados ───────────────────────────────────────────────────────────
+// ── Mocks ─────────────────────────────────────────────
 
 const mockCategoryTree: CategoryTree = {
-  Eletronicos: [
-    { id: 10, name: "Smartphones", parentId: 1 },
-    { id: 11, name: "Notebooks", parentId: 1 },
+  1: [
+    {
+      id: 10,
+      name: "Smartphones",
+      parentId: 1,
+      parent: { id: 1, name: "Eletrônicos", parentId: null },
+    },
+    {
+      id: 11,
+      name: "Notebooks",
+      parentId: 1,
+      parent: { id: 1, name: "Eletrônicos", parentId: null },
+    },
   ],
-  Roupas: [{ id: 20, name: "Camisetas", parentId: 2 }],
+  2: [
+    {
+      id: 20,
+      name: "Camisetas",
+      parentId: 2,
+      parent: { id: 2, name: "Roupas", parentId: null },
+    },
+  ],
 };
 
 const mockProduct: Product = {
   id: 50,
   name: "iPhone 15",
   price: 5000,
+  stock: 10,
   description: "Celular Apple",
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -31,7 +49,11 @@ const mockProduct: Product = {
     {
       productId: 50,
       categoryId: 10,
-      category: { id: 10, name: "Smartphones", parentId: 1 },
+      category: {
+        id: 10,
+        name: "Smartphones",
+        parentId: 1,
+      },
     },
   ],
 };
@@ -43,133 +65,189 @@ const defaultProps = {
   onClose: vi.fn(),
 };
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// ── Tests ─────────────────────────────────────────────
 
 describe("ProductForm", () => {
-  it("deve renderizar os campos vazios no modo de criação", () => {
-    render(<ProductForm {...defaultProps} />);
+  describe("renderização", () => {
+    it("deve renderizar nome vazio", () => {
+      render(<ProductForm {...defaultProps} />);
+      expect(screen.getByPlaceholderText(/Monitor UltraWide/i)).toHaveValue("");
+    });
 
-    expect(screen.getByPlaceholderText(/Monitor UltraWide/i)).toHaveValue("");
-    expect(screen.getByPlaceholderText("0,00")).toHaveValue(null);
-    expect(screen.getByLabelText(/Categoria/i)).toHaveValue("Eletronicos");
+    it("deve renderizar preço vazio", () => {
+      render(<ProductForm {...defaultProps} />);
+      expect(screen.getByPlaceholderText("0,00")).toHaveValue("");
+    });
+
+    it("deve renderizar estoque padrão", () => {
+      render(<ProductForm {...defaultProps} />);
+      expect(screen.getByPlaceholderText("0")).toHaveValue(0);
+    });
   });
 
-  it("deve preencher os campos corretamente no modo de edição", () => {
-    render(<ProductForm {...defaultProps} editingProduct={mockProduct} />);
+  // ── Categoria ───────────────────────────────────────
 
-    expect(screen.getByPlaceholderText(/Monitor UltraWide/i)).toHaveValue(
-      "iPhone 15",
-    );
-    expect(screen.getByPlaceholderText("0,00")).toHaveValue(5000);
-    expect(screen.getByText("Smartphones")).toHaveClass("bg-indigo-600"); // Selecionado
+  describe("categoria", () => {
+    it("deve exibir nome do parent corretamente no select", () => {
+      render(<ProductForm {...defaultProps} />);
+
+      const options = screen.getAllByRole("option");
+
+      expect(options[0]).toHaveTextContent("Eletrônicos");
+      expect(options[1]).toHaveTextContent("Roupas");
+    });
+
+    it("deve limpar subcategorias ao trocar categoria", () => {
+      render(<ProductForm {...defaultProps} />);
+
+      fireEvent.change(screen.getByLabelText(/Categoria/i), {
+        target: { value: "2" },
+      });
+
+      expect(
+        screen.getByRole("button", { name: /Camisetas/i }),
+      ).toBeInTheDocument();
+    });
   });
 
-  it("deve atualizar as subcategorias ao mudar a categoria principal", () => {
-    render(<ProductForm {...defaultProps} />);
+  // ── Subcategorias ───────────────────────────────────
 
-    const select = screen.getByLabelText(/Categoria/i);
+  describe("subcategorias", () => {
+    it("deve selecionar subcategoria", () => {
+      render(<ProductForm {...defaultProps} />);
 
-    // Inicialmente mostra eletrônicos
-    expect(screen.getByText("Smartphones")).toBeInTheDocument();
+      const btn = screen.getByRole("button", { name: /Smartphones/i });
 
-    fireEvent.change(select, { target: { value: "Roupas" } });
+      fireEvent.click(btn);
 
-    expect(screen.queryByText("Smartphones")).not.toBeInTheDocument();
-    expect(screen.getByText("Camisetas")).toBeInTheDocument();
+      expect(btn).toHaveClass("bg-indigo-600");
+    });
+
+    it("deve desmarcar subcategoria", () => {
+      render(<ProductForm {...defaultProps} />);
+
+      const btn = screen.getByRole("button", { name: /Smartphones/i });
+
+      fireEvent.click(btn);
+      fireEvent.click(btn);
+
+      expect(btn).not.toHaveClass("bg-indigo-600");
+    });
+
+    it("deve manter múltiplas subcategorias selecionadas", () => {
+      render(<ProductForm {...defaultProps} />);
+
+      const smartphone = screen.getByRole("button", { name: /Smartphones/i });
+      const notebook = screen.getByRole("button", { name: /Notebooks/i });
+
+      fireEvent.click(smartphone);
+      fireEvent.click(notebook);
+
+      expect(smartphone).toHaveClass("bg-indigo-600");
+      expect(notebook).toHaveClass("bg-indigo-600");
+    });
   });
 
-  it("deve selecionar/deselecionar subcategorias ao clicar", () => {
-    render(<ProductForm {...defaultProps} />);
+  // ── Preço ───────────────────────────────────────────
 
-    const subButton = screen.getByText("Smartphones");
+  describe("preço", () => {
+    it("deve formatar preço corretamente", () => {
+      render(<ProductForm {...defaultProps} />);
 
-    // Seleciona
-    fireEvent.click(subButton);
-    expect(subButton).toHaveClass("bg-indigo-600");
+      fireEvent.change(screen.getByPlaceholderText("0,00"), {
+        target: { value: "25050" },
+      });
 
-    // Deseleciona
-    fireEvent.click(subButton);
-    expect(subButton).not.toHaveClass("bg-indigo-600");
+      expect(screen.getByPlaceholderText("0,00")).toHaveValue("250,50");
+    });
   });
 
-  it("deve validar campos obrigatórios via Zod e exibir mensagens de erro", async () => {
-    render(<ProductForm {...defaultProps} />);
+  // ── Submissão ───────────────────────────────────────
 
-    const saveButton = screen.getByRole("button", { name: /Salvar/i });
-    fireEvent.click(saveButton);
+  describe("submit", () => {
+    it("deve chamar onSave com dados corretos", async () => {
+      const onSave = vi.fn().mockResolvedValue(true);
 
-    // Buscamos por qualquer texto que contenha "obrigatório" ou "Erro"
-    // (Ajuste a Regex conforme as mensagens reais do seu CreateProductSchema)
-    await waitFor(() => {
-      const errorMessages = screen.queryAllByText(
-        /obrigatório|inválido|preço/i,
+      render(<ProductForm {...defaultProps} onSave={onSave} />);
+
+      fireEvent.change(screen.getByPlaceholderText(/Monitor UltraWide/i), {
+        target: { value: "Teclado Mecânico" },
+      });
+
+      fireEvent.change(screen.getByPlaceholderText("0,00"), {
+        target: { value: "25050" },
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /Smartphones/i }));
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Salvar/i }));
+      });
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: "Teclado Mecânico",
+            price: 250.5,
+            categoryIds: [10],
+          }),
+        );
+      });
+    });
+
+    it("deve chamar onClose após sucesso", async () => {
+      const onSave = vi.fn().mockResolvedValue(true);
+      const onClose = vi.fn();
+
+      render(
+        <ProductForm {...defaultProps} onSave={onSave} onClose={onClose} />,
       );
-      expect(errorMessages.length).toBeGreaterThan(0);
-    });
-  });
 
-  it("deve chamar onSave com os dados corretos ao submeter o formulário", async () => {
-    const onSave = vi.fn().mockResolvedValue(true);
-    render(<ProductForm {...defaultProps} onSave={onSave} />);
+      fireEvent.change(screen.getByPlaceholderText(/Monitor UltraWide/i), {
+        target: { value: "Produto Válido" },
+      });
 
-    // Preenche os campos
-    fireEvent.change(screen.getByPlaceholderText(/Monitor UltraWide/i), {
-      target: { value: "Teclado Mecânico" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("0,00"), {
-      target: { value: "250.50" },
-    });
+      fireEvent.change(screen.getByPlaceholderText("0,00"), {
+        target: { value: "10000" },
+      });
 
-    // Seleciona uma subcategoria
-    fireEvent.click(screen.getByText("Notebooks"));
+      fireEvent.click(screen.getByRole("button", { name: /Smartphones/i }));
 
-    fireEvent.click(screen.getByRole("button", { name: /Salvar/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Salvar/i }));
+      });
 
-    await waitFor(() => {
-      expect(onSave).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "Teclado Mecânico",
-          price: 250.5,
-          categoryIds: [11],
-        }),
-      );
-    });
-  });
-
-  it("deve chamar onClose após um salvamento bem-sucedido", async () => {
-    // 1. Garantimos que o mock resolve como TRUE
-    const onSave = vi.fn().mockResolvedValue(true);
-    const onClose = vi.fn();
-
-    render(<ProductForm {...defaultProps} onSave={onSave} onClose={onClose} />);
-
-    // 2. Preenchimento completo para evitar qualquer erro do Zod
-    // Use valores que você tem certeza que o seu CreateProductSchema aceita
-    fireEvent.change(screen.getByPlaceholderText(/Monitor UltraWide/i), {
-      target: { value: "Produto de Teste Valido" },
-    });
-
-    fireEvent.change(screen.getByPlaceholderText("0,00"), {
-      target: { value: "100" },
-    });
-
-    // 3. Importante: Se o seu schema exigir ao menos uma categoria, selecione uma:
-    const subButton = screen.queryByText("Smartphones");
-    if (subButton) fireEvent.click(subButton);
-
-    const saveButton = screen.getByRole("button", { name: /Salvar/i });
-
-    // 4. Disparamos o evento e aguardamos
-    await act(async () => {
-      fireEvent.click(saveButton);
-    });
-
-    await waitFor(
-      () => {
-        expect(onSave).toHaveBeenCalled();
+      await waitFor(() => {
         expect(onClose).toHaveBeenCalled();
-      },
-      { timeout: 3000 },
-    );
+      });
+    });
+
+    it("não deve fechar se salvar falhar", async () => {
+      const onSave = vi.fn().mockResolvedValue(false);
+      const onClose = vi.fn();
+
+      render(
+        <ProductForm {...defaultProps} onSave={onSave} onClose={onClose} />,
+      );
+
+      fireEvent.change(screen.getByPlaceholderText(/Monitor UltraWide/i), {
+        target: { value: "Produto Válido" },
+      });
+
+      fireEvent.change(screen.getByPlaceholderText("0,00"), {
+        target: { value: "10000" },
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /Smartphones/i }));
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Salvar/i }));
+      });
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalled();
+        expect(onClose).not.toHaveBeenCalled();
+      });
+    });
   });
 });

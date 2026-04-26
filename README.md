@@ -106,10 +106,10 @@ product-manager/               ← Monorepo (npm workspaces)
 
 #### Categorias
 
-| Método | Rota      | Descrição                 |
-| ------ | --------- | ------------------------- |
-| GET    | /category | Lista todas as categorias |
-| POST   | /category | Cria nova categoria       |
+| Método | Rota        | Descrição                 |
+| ------ | ----------- | ------------------------- |
+| GET    | /categories | Lista todas as categorias |
+| POST   | /categories | Cria nova categoria       |
 
 > Toda validação usa `nestjs-zod` com `ZodValidationPipe`. Categorias aplicam o pipe por rota via `@UsePipes`; produtos via pipe global configurado no `main.ts`.
 
